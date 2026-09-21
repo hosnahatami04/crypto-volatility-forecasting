@@ -1,0 +1,22 @@
+{
+  "BTCUSDT": {
+    "symbol": "BTCUSDT",
+    "interval": "1h",
+    "n_rows": 17520,
+    "n_duplicates": 0,
+    "is_monotonic": true,
+    "n_gaps": 0,
+    "n_missing_hours": 0,
+    "gaps": []
+  },
+  "ETHUSDT": {
+    "symbol": "ETHUSDT",
+    "interval": "1h",
+    "n_rows": 17520,
+    "n_duplicates": 0,
+    "is_monotonic": true,
+    "n_gaps": 0,
+    "n_missing_hours": 0,
+    "gaps": []
+  }
+}
