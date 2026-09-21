@@ -133,12 +133,14 @@ def run_lstm_walk_forward(hourly_returns: pd.Series, rv: pd.Series) -> dict:
         "score": score,
         "n_refits": n_refits,
         "total_train_seconds": round(total_train_seconds, 2),
+        "forecast_vol_by_date": forecast_aligned,
     }
 
 
 def run() -> None:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     results: dict[str, dict] = {}
+    forecast_series_by_symbol: dict[str, pd.Series] = {}
 
     for symbol in SYMBOLS:
         print(f"[{symbol}] loading data and training LSTM through walk-forward...")
@@ -148,6 +150,7 @@ def run() -> None:
         result = run_lstm_walk_forward(hourly_returns, rv)
         wall_time = time.time() - t_total
 
+        forecast_series_by_symbol[symbol] = result.pop("forecast_vol_by_date")
         results[symbol] = result
         score = result["score"]
         print(
@@ -159,6 +162,11 @@ def run() -> None:
     out_path = RESULTS_DIR / "lstm.json"
     out_path.write_text(json.dumps(results, indent=2))
     print(f"\nWrote {out_path}")
+
+    for symbol, series in forecast_series_by_symbol.items():
+        series_path = RESULTS_DIR / f"lstm_forecast_{symbol}.csv"
+        series.rename("lstm_forecast_vol").to_csv(series_path, index_label="date")
+        print(f"Wrote {series_path}")
 
 
 if __name__ == "__main__":

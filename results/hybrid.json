@@ -6,7 +6,7 @@
       "mae": 0.008078755518408798
     },
     "n_refits": 12,
-    "total_train_seconds": 174.74
+    "total_train_seconds": 77.12
   },
   "ETHUSDT": {
     "score": {
@@ -15,6 +15,6 @@
       "mae": 0.011008929392327622
     },
     "n_refits": 12,
-    "total_train_seconds": 169.99
+    "total_train_seconds": 74.8
   }
 }
