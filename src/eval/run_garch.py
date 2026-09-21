@@ -86,17 +86,21 @@ def run_garch_walk_forward(returns_pct: pd.Series, rv: pd.Series) -> dict:
     return {
         "score": score,
         "parameter_interpretation": final_fit.to_dict(),
+        "forecast_vol_by_date": forecast_vol_aligned,
     }
 
 
 def run() -> None:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     results: dict[str, dict] = {}
+    forecast_series_by_symbol: dict[str, pd.Series] = {}
 
     for symbol in SYMBOLS:
         print(f"[{symbol}] loading data and fitting GARCH(1,1) through walk-forward...")
         returns_pct, rv = load_returns_and_rv(symbol)
         result = run_garch_walk_forward(returns_pct, rv)
+
+        forecast_series_by_symbol[symbol] = result.pop("forecast_vol_by_date")
         results[symbol] = result
 
         score = result["score"]
@@ -112,6 +116,14 @@ def run() -> None:
     out_path = RESULTS_DIR / "garch.json"
     out_path.write_text(json.dumps(results, indent=2))
     print(f"\nWrote {out_path}")
+
+    # Persist the full walk-forward forecast series per symbol -- Phase 5's
+    # hybrid model reads this directly rather than ever recomputing GARCH
+    # with full-sample luxury.
+    for symbol, series in forecast_series_by_symbol.items():
+        series_path = RESULTS_DIR / f"garch_forecast_{symbol}.csv"
+        series.rename("garch_forecast_vol").to_csv(series_path, index_label="date")
+        print(f"Wrote {series_path}")
 
 
 if __name__ == "__main__":

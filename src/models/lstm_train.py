@@ -59,7 +59,8 @@ def train_lstm(
     X_val_t = torch.tensor(X_val, dtype=torch.float32)
     y_val_t = torch.tensor(y_val, dtype=torch.float32)
 
-    model = VolLSTM()
+    n_channels = X_train.shape[-1]
+    model = VolLSTM(n_channels=n_channels)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     loss_fn = nn.MSELoss()
 
