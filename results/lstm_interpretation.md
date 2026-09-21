@@ -11,10 +11,12 @@ exactly what happened here.
 | Persistence | 0.909 | 0.901 |
 | Rolling mean (7d) | 0.492 | 0.572 |
 | GARCH(1,1) | 0.406 | 0.458 |
-| **LSTM** | **0.600** | **0.504** |
+| **LSTM** | **0.572** | **0.489** |
 
-GARCH wins on both coins. The LSTM is 47.7% worse than GARCH on BTC and
-10.1% worse on ETH (QLIKE, higher = worse).
+GARCH wins on both coins. The LSTM is 40.9% worse than GARCH on BTC and
+6.8% worse on ETH (QLIKE, higher = worse) -- both narrower gaps than the
+monthly-refit numbers reported earlier in this project (47.7% and 10.1%
+respectively), after switching the LSTM to weekly refit (see below).
 
 The LSTM does beat both naive baselines on both coins, so it learned
 something real from the return windows -- it is not broken or random. It
@@ -33,9 +35,12 @@ purposes).
   yesterday's shock and yesterday's variance) is close to the true generating
   mechanism of financial volatility clustering. The LSTM has to discover
   something equivalent from raw return sequences with no such prior.
-- **Refit cadence**: GARCH refits weekly; the LSTM refits monthly (CPU
-  budget). GARCH adapts to regime changes roughly 4x faster in this setup,
-  which plausibly matters during volatile stretches.
+- **Refit cadence**: originally GARCH refit weekly while the LSTM refit
+  monthly (a CPU-budget tradeoff). This was tested directly and fixed: the
+  LSTM now refits weekly too (`REFIT_EVERY_N_DAYS=7`), matching GARCH's
+  cadence, which measurably improved QLIKE by 4.6% (BTC) and 2.9% (ETH) --
+  see `results/analysis.md` for the full before/after comparison. The
+  remaining gap to GARCH is not explained by refit cadence alone.
 
 ## A bug found and fixed along the way
 

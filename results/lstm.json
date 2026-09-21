@@ -2,19 +2,19 @@
   "BTCUSDT": {
     "score": {
       "n_obs": 364,
-      "qlike": 0.5995158468363364,
-      "mae": 0.008045763129491302
+      "qlike": 0.5721103431778446,
+      "mae": 0.007626744493603136
     },
-    "n_refits": 13,
-    "total_train_seconds": 114.01
+    "n_refits": 52,
+    "total_train_seconds": 480.61
   },
   "ETHUSDT": {
     "score": {
       "n_obs": 364,
-      "qlike": 0.5039165706367772,
-      "mae": 0.011003193452909944
+      "qlike": 0.489242139937208,
+      "mae": 0.010589982941886856
     },
-    "n_refits": 13,
-    "total_train_seconds": 108.83
+    "n_refits": 52,
+    "total_train_seconds": 450.16
   }
 }

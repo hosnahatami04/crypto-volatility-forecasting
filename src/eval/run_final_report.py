@@ -19,7 +19,7 @@ import pandas as pd
 
 from src.data.returns import log_returns
 from src.eval.dm_test import diebold_mariano_test
-from src.eval.metrics import mae, mean_qlike, qlike
+from src.eval.metrics import mae, mape, mean_qlike, qlike
 from src.eval.stress import calm_stress_report
 from src.target.realized_vol import realized_volatility
 
@@ -67,6 +67,7 @@ def score(rv: pd.Series, forecast: pd.Series) -> dict:
         "n_obs": int(len(rv_aligned)),
         "qlike": mean_qlike(rv_var, forecast_var),
         "mae": mae(rv_aligned, forecast_aligned),
+        "mape": mape(rv_aligned, forecast_aligned),
     }
 
 
@@ -85,7 +86,10 @@ def run() -> None:
 
         five_way_table = {model: score(rv, forecasts[model]) for model in MODELS}
         for model, result in five_way_table.items():
-            print(f"  {model}: QLIKE={result['qlike']:.4f} MAE={result['mae']:.6f}")
+            print(
+                f"  {model}: QLIKE={result['qlike']:.4f} MAE={result['mae']:.6f} "
+                f"MAPE={result['mape']:.1f}%"
+            )
 
         best_model = min(five_way_table, key=lambda m: five_way_table[m]["qlike"])
         print(f"  -> best model: {best_model}")
