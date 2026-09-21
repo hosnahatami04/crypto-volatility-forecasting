@@ -30,6 +30,6 @@ def realized_volatility(hourly_log_returns: pd.Series) -> pd.Series:
 
     daily_sum_sq = complete.pow(2).groupby(complete.index.date).sum()
     rv = np.sqrt(daily_sum_sq)
-    rv.index = pd.to_datetime(rv.index)
+    rv.index = pd.to_datetime(rv.index).tz_localize(hourly_log_returns.index.tz)
     rv.name = "realized_vol"
     return rv
