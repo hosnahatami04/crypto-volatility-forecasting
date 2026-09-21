@@ -32,9 +32,10 @@ def load_realized_vol(symbol: str) -> pd.Series:
     return realized_volatility(returns)
 
 
-def score_baseline(rv: pd.Series, forecast: pd.Series, window_days: int) -> dict:
+def score_baseline(rv: pd.Series, forecast: pd.Series, window_days: int) -> tuple[dict, pd.Series]:
     """Score a forecast series only over the walk-forward test period
     (i.e. only origins that had a full window_days of history available).
+    Returns (score_dict, forecast_series_on_test_dates).
     """
     splits = list(walk_forward_splits(rv.index, window_days=window_days))
     test_dates = pd.DatetimeIndex([s.forecast_date for s in splits])
@@ -50,11 +51,12 @@ def score_baseline(rv: pd.Series, forecast: pd.Series, window_days: int) -> dict
     rv_var = rv_test**2
     forecast_var = forecast_test**2
 
-    return {
+    score = {
         "n_obs": int(len(rv_test)),
         "qlike": mean_qlike(rv_var, forecast_var),
         "mae": mae(rv_test, forecast_test),
     }
+    return score, forecast_test
 
 
 def run() -> None:
@@ -68,13 +70,20 @@ def run() -> None:
         persistence = persistence_forecast(rv)
         rolling_mean = rolling_mean_forecast(rv, window=7)
 
-        persistence_score = score_baseline(rv, persistence, WINDOW_DAYS)
-        rolling_mean_score = score_baseline(rv, rolling_mean, WINDOW_DAYS)
+        persistence_score, persistence_series = score_baseline(rv, persistence, WINDOW_DAYS)
+        rolling_mean_score, rolling_mean_series = score_baseline(rv, rolling_mean, WINDOW_DAYS)
 
         results[symbol] = {
             "persistence": persistence_score,
             "rolling_mean_7d": rolling_mean_score,
         }
+
+        persistence_series.rename("persistence_forecast_vol").to_csv(
+            RESULTS_DIR / f"persistence_forecast_{symbol}.csv", index_label="date"
+        )
+        rolling_mean_series.rename("rolling_mean_forecast_vol").to_csv(
+            RESULTS_DIR / f"rolling_mean_forecast_{symbol}.csv", index_label="date"
+        )
 
         print(
             f"[{symbol}] persistence: QLIKE={persistence_score['qlike']:.4f} "
