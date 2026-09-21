@@ -9,6 +9,8 @@ any improvement over the classical baseline is statistically significant.
 
 > Personal project. Public market data. Not investment advice.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ## Table of contents
 
 - [Why volatility, not price](#why-volatility-not-price)
