@@ -33,7 +33,7 @@ from src.target.realized_vol import realized_volatility
 
 SYMBOLS = ("BTCUSDT", "ETHUSDT")
 WINDOW_DAYS = 365
-REFIT_EVERY_N_DAYS = 30  # same monthly cadence as the plain LSTM, for a fair comparison
+REFIT_EVERY_N_DAYS = 7  # weekly refit, matching GARCH's and the plain LSTM's cadence
 SEED = 42
 
 ROOT = Path(__file__).resolve().parents[2]

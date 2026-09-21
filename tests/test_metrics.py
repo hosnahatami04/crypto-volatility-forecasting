@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.eval.metrics import mae, mean_qlike, qlike
+from src.eval.metrics import mae, mape, mean_qlike, qlike
 
 
 def test_qlike_hand_computed():
@@ -54,3 +54,29 @@ def test_metrics_align_on_index():
     forecast = pd.Series([4.0, 9.0], index=[1, 2])  # missing index 0
     result = qlike(rv, forecast)
     assert len(result) == 2
+
+
+def test_mape_hand_computed():
+    # Errors: |0.10-0.12|/0.10=20%, |0.20-0.18|/0.20=10%, |0.15-0.15|/0.15=0%
+    # Mean = (20 + 10 + 0) / 3 = 10%
+    realized = pd.Series([0.10, 0.20, 0.15])
+    forecast = pd.Series([0.12, 0.18, 0.15])
+    result = mape(realized, forecast)
+    assert result == pytest.approx(10.0, rel=1e-10)
+
+
+def test_mape_zero_at_perfect_forecast():
+    realized = pd.Series([0.05, 0.10])
+    forecast = pd.Series([0.05, 0.10])
+    assert mape(realized, forecast) == pytest.approx(0.0, abs=1e-12)
+
+
+def test_mape_symmetric_between_over_and_under_prediction():
+    # MAPE, unlike QLIKE, treats a 50% over-prediction and a 50%
+    # under-prediction as equally bad -- that symmetry is exactly why it's
+    # not the project's primary metric, but it's what this test documents.
+    realized = pd.Series([0.10])
+    underpredict = pd.Series([0.05])  # 50% under
+    overpredict = pd.Series([0.15])  # 50% over
+
+    assert mape(realized, underpredict) == pytest.approx(mape(realized, overpredict))

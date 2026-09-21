@@ -12,10 +12,13 @@ head start?
 | Persistence | 0.909 | 0.901 |
 | Rolling mean (7d) | 0.492 | 0.572 |
 | GARCH(1,1) | 0.406 | 0.458 |
-| LSTM (Phase 4) | 0.600 | 0.504 |
-| **Hybrid** | **0.529** | **0.507** |
+| LSTM | 0.572 | 0.489 |
+| **Hybrid** | **0.512** | **0.488** |
 
-GARCH still wins on both coins. The hybrid does not beat plain GARCH.
+GARCH still wins on both coins. The hybrid does not beat plain GARCH, though
+on ETH it comes very close (0.488 vs 0.458, a 6.5% gap) and the
+Diebold-Mariano test can no longer distinguish GARCH's ETH lead from noise
+(p=0.507 -- see `results/analysis.md`).
 
 ## What the GARCH feature actually bought
 
@@ -23,17 +26,19 @@ Comparing hybrid to plain LSTM in isolation (holding architecture, refit
 cadence, and training protocol fixed) shows the GARCH feature had different
 effects on the two coins:
 
-- **BTC**: hybrid QLIKE 0.529 vs plain LSTM 0.600 -- an 11.8% improvement.
-  The GARCH feature gave the network real, useful information here.
-- **ETH**: hybrid QLIKE 0.507 vs plain LSTM 0.504 -- essentially unchanged
-  (0.6% worse). The GARCH feature made no meaningful difference on this coin.
+- **BTC**: hybrid QLIKE 0.512 vs plain LSTM 0.572 -- a 10.5% improvement.
+  The GARCH feature gives the network real, useful information here.
+- **ETH**: hybrid QLIKE 0.488 vs plain LSTM 0.489 -- essentially unchanged
+  (0.2% better, effectively noise). The GARCH feature makes no meaningful
+  difference on this coin.
 
-So the hybrid partially delivered on its premise (it helped meaningfully on
-BTC) but did not close the gap to plain GARCH on either coin, and had no
-effect at all on ETH. This is reported as the finding, not massaged: a
-single constant-per-window GARCH feature is not enough to let the LSTM
-match, let alone exceed, a well-specified GARCH(1,1) fit directly on the
-same data.
+This pattern held after switching both models to weekly refit cadence (see
+`results/analysis.md`): the hybrid partially delivered on its premise (it
+helps meaningfully on BTC) but did not close the gap to plain GARCH on
+either coin, and still has no real effect on ETH. This is reported as the
+finding, not massaged: a single constant-per-window GARCH feature is not
+enough to let the LSTM match, let alone exceed, a well-specified GARCH(1,1)
+fit directly on the same data.
 
 ## Why hybrid likely couldn't close the gap to GARCH
 
@@ -65,6 +70,15 @@ same data.
    channel count from the actual training data's shape instead of hardcoding
    it -- the same training function now serves both the plain LSTM and the
    hybrid without needing to know in advance which one it's training.
+
+## Follow-up: refit cadence fixed to weekly
+
+Both the plain LSTM and hybrid originally refit monthly, a CPU-budget
+tradeoff against GARCH's weekly refit. That tradeoff was tested directly and
+found to cost real accuracy: switching the hybrid to weekly refit improved
+QLIKE by 3.3% (BTC) and 3.8% (ETH). This is now the permanent configuration.
+Full before/after numbers for all four LSTM/hybrid x BTC/ETH combinations
+are in `results/analysis.md`.
 
 ## What this means going into Phase 6
 

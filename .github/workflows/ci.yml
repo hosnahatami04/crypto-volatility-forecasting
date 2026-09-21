@@ -27,3 +27,6 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+      - name: QLIKE regression gate
+        run: python -m src.eval.ci_regression_gate

@@ -42,3 +42,18 @@ def mae(realized_vol: pd.Series, forecast_vol: pd.Series) -> float:
     """Mean absolute error on VOLATILITY (not variance)."""
     aligned_realized, aligned_forecast = realized_vol.align(forecast_vol, join="inner")
     return float((aligned_realized - aligned_forecast).abs().mean())
+
+
+def mape(realized_vol: pd.Series, forecast_vol: pd.Series) -> float:
+    """Mean Absolute Percentage Error on volatility, as a percentage (e.g.
+    15.0 means forecasts are off by 15% of the realized value on average).
+
+    Not the project's primary metric -- QLIKE is, because MAPE treats over-
+    and under-prediction symmetrically, which understates the real cost of
+    under-predicting risk. MAPE exists here only to give a plain-language
+    "how far off is this on average" figure alongside QLIKE, since QLIKE's
+    value has no percentage interpretation on its own.
+    """
+    aligned_realized, aligned_forecast = realized_vol.align(forecast_vol, join="inner")
+    percentage_errors = (aligned_realized - aligned_forecast).abs() / aligned_realized
+    return float(percentage_errors.mean() * 100)
