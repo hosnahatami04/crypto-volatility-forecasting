@@ -94,30 +94,25 @@ def run() -> None:
         best_model = min(five_way_table, key=lambda m: five_way_table[m]["qlike"])
         print(f"  -> best model: {best_model}")
 
+        # Run DM tests on every claim of improvement that matters, not just
+        # one. The plan requires each claimed improvement to be checked with a
+        # DM test; a single comparison would let the more interesting negative
+        # results (e.g. GARCH's edge over a plain 7-day mean not being
+        # significant) go unreported.
+        dm_pairs = [
+            ("garch", "rolling_mean"),  # is GARCH's edge over the naive floor real?
+            ("garch", "lstm"),
+            ("garch", "hybrid"),
+            ("hybrid", "lstm"),  # did the GARCH feature significantly help the LSTM?
+        ]
         dm_results = {}
-        if best_model != "garch":
-            best_daily_qlike = daily_qlike_series(rv, forecasts[best_model])
-            garch_daily_qlike = daily_qlike_series(rv, forecasts["garch"])
-            dm_result = diebold_mariano_test(best_daily_qlike, garch_daily_qlike)
-            dm_results[f"{best_model}_vs_garch"] = dm_result.to_dict()
+        for model_a, model_b in dm_pairs:
+            a_daily = daily_qlike_series(rv, forecasts[model_a])
+            b_daily = daily_qlike_series(rv, forecasts[model_b])
+            dm_result = diebold_mariano_test(a_daily, b_daily)
+            dm_results[f"{model_a}_vs_{model_b}"] = dm_result.to_dict()
             print(
-                f"  DM test ({best_model} vs garch): stat={dm_result.dm_statistic:.3f} "
-                f"p={dm_result.p_value:.4f} "
-                f"significant={'yes' if dm_result.p_value < 0.05 else 'no'}"
-            )
-        else:
-            # GARCH is already the best model; test it against the next-best
-            # non-naive contender (hybrid) to see if ITS lead is significant.
-            challenger = min(
-                (m for m in MODELS if m not in ("garch", "persistence", "rolling_mean")),
-                key=lambda m: five_way_table[m]["qlike"],
-            )
-            garch_daily_qlike = daily_qlike_series(rv, forecasts["garch"])
-            challenger_daily_qlike = daily_qlike_series(rv, forecasts[challenger])
-            dm_result = diebold_mariano_test(garch_daily_qlike, challenger_daily_qlike)
-            dm_results[f"garch_vs_{challenger}"] = dm_result.to_dict()
-            print(
-                f"  DM test (garch vs {challenger}): stat={dm_result.dm_statistic:.3f} "
+                f"  DM test ({model_a} vs {model_b}): stat={dm_result.dm_statistic:.3f} "
                 f"p={dm_result.p_value:.4f} "
                 f"significant={'yes' if dm_result.p_value < 0.05 else 'no'}"
             )

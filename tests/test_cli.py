@@ -1,12 +1,29 @@
 import pandas as pd
 import pytest
 
-from src.cli import PAIR_TO_SYMBOL, regime_percentile
+from src.cli import PAIR_TO_SYMBOL, _ordinal, regime_percentile
 
 
 def test_pair_to_symbol_mapping():
     assert PAIR_TO_SYMBOL["BTC"] == "BTCUSDT"
     assert PAIR_TO_SYMBOL["ETH"] == "ETHUSDT"
+
+
+def test_ordinal_basic_suffixes():
+    assert _ordinal(1) == "1st"
+    assert _ordinal(2) == "2nd"
+    assert _ordinal(3) == "3rd"
+    assert _ordinal(4) == "4th"
+    assert _ordinal(62) == "62nd"  # the case from the reported CLI bug
+    assert _ordinal(21) == "21st"
+
+
+def test_ordinal_teens_are_all_th():
+    # 11th, 12th, 13th are special -- not 11st/12nd/13rd.
+    assert _ordinal(11) == "11th"
+    assert _ordinal(12) == "12th"
+    assert _ordinal(13) == "13th"
+    assert _ordinal(111) == "111th"
 
 
 def test_regime_percentile_hand_computed():
