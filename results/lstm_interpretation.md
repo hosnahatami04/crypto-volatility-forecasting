@@ -18,11 +18,13 @@ GARCH wins on both coins. The LSTM is 40.9% worse than GARCH on BTC and
 monthly-refit numbers reported earlier in this project (47.7% and 10.1%
 respectively), after switching the LSTM to weekly refit (see below).
 
-The LSTM does beat both naive baselines on both coins, so it learned
-something real from the return windows -- it is not broken or random. It
-simply does not outperform a well-specified 3-parameter statistical model on
-a dataset this size (roughly 2 years, one observation per day for training
-purposes).
+The LSTM beats plain persistence on both coins, and beats the 7-day rolling
+mean on ETH (0.489 vs 0.572) -- but NOT on BTC, where the rolling mean
+(0.492) is actually better than the LSTM (0.572). So it learned something
+real from the return windows (it is not broken or random), but on BTC a
+trivial moving average still beats it. It does not outperform a
+well-specified 3-parameter statistical model on a dataset this size (roughly
+2 years, one observation per day for training purposes).
 
 ## Why GARCH likely has the edge here
 
@@ -41,6 +43,18 @@ purposes).
   cadence, which measurably improved QLIKE by 4.6% (BTC) and 2.9% (ETH) --
   see `results/analysis.md` for the full before/after comparison. The
   remaining gap to GARCH is not explained by refit cadence alone.
+- **The LSTM may be undertrained, not just data-starved.** The training
+  loop (`src/models/lstm_train.py`) is full-batch: one Adam step per epoch,
+  capped at 100 epochs with early stopping (patience 8). That is a small
+  number of gradient updates, and combined with an MSE loss on log-variance
+  (which, being symmetric in log space, mildly biases point forecasts
+  downward relative to the QLIKE-optimal forecast), it is a plausible second
+  contributor to the LSTM's tendency to under-predict and to its poor
+  stress-day performance -- not just "too little data." This is an honest
+  limitation of the current setup rather than a demonstrated fact; a
+  mini-batch loop with more update steps, or a QLIKE-aware loss, would be the
+  natural next experiment. It was left out of scope here to keep the
+  committed results reproducible under a single documented protocol.
 
 ## A bug found and fixed along the way
 

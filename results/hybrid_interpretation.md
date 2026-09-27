@@ -80,9 +80,37 @@ QLIKE by 3.3% (BTC) and 3.8% (ETH). This is now the permanent configuration.
 Full before/after numbers for all four LSTM/hybrid x BTC/ETH combinations
 are in `results/analysis.md`.
 
-## What this means going into Phase 6
+## Did the GARCH feature help significantly? (DM test)
 
-GARCH(1,1) remains the best model on both coins across this entire project so
-far. Phase 6's Diebold-Mariano test will determine whether GARCH's lead over
-the naive baselines is statistically significant -- and, separately, whether
-the small hybrid-vs-plain-LSTM improvement on BTC is real signal or noise.
+The hybrid-vs-plain-LSTM comparison this document promised is now run in
+`src/eval/run_final_report.py` and recorded in `results/final_report.json`:
+
+- **BTC**: hybrid beats the plain LSTM significantly (DM p=0.026). Feeding
+  GARCH's forecast into the network produced a real, statistically-detectable
+  improvement here.
+- **ETH**: the hybrid-vs-LSTM difference is not significant (DM p=0.654) --
+  consistent with the two models scoring almost identically (0.488 vs 0.489).
+
+So the GARCH feature demonstrably helps on BTC and does nothing measurable
+on ETH -- reported both ways.
+
+## A caveat on the hybrid's evaluation window
+
+The hybrid is scored on 345 days, not the 364-365 the other models get,
+because GARCH's forecast feature only exists for the test period -- the first
+~20 test days have no preceding GARCH-feature history to train on and are
+skipped, and the hybrid's early training window is effectively expanding
+rather than the fixed rolling 12-month window used elsewhere. Re-scoring the
+other models on the same 345 shared days does not change the ranking, so the
+result stands, but the hybrid's numbers are not strictly apples-to-apples.
+See `results/analysis.md` for the full note.
+
+## Bottom line
+
+GARCH(1,1) remains the best model on both coins by QLIKE across this entire
+project. Its lead over the LSTM and hybrid is statistically significant on
+BTC but not on ETH, and -- notably -- its lead over a plain 7-day rolling
+mean is not significant on either coin. The hybrid delivered a real,
+significant improvement over the plain LSTM on BTC, which is the clearest
+evidence in the project that combining classical statistics with deep
+learning can help; it just wasn't enough to overtake GARCH itself.
