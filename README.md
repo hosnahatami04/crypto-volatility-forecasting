@@ -88,25 +88,33 @@ note below the table).
 | LSTM | 0.572 | 0.00763 | 50.8% | 0.489 | 0.01059 | 52.1% |
 | Hybrid (GARCH + LSTM) | 0.512 | 0.01078 | 64.5% | 0.488 | 0.01070 | 53.2% |
 
-**GARCH(1,1) is the best model on both coins by QLIKE.** Its edge over the
-hybrid on BTC is statistically significant but only just (Diebold-Mariano
-p=0.049); its edge over the hybrid on ETH is not (p=0.507) -- reported
-plainly either way, per this project's rule against massaging results.
+**GARCH(1,1) is the best model on both coins by QLIKE.** But the honest
+caveat, from running a Diebold-Mariano test on every pairwise comparison
+(not just one): GARCH's edge over a plain 7-day rolling mean is **not**
+statistically significant on either coin (p=0.139 BTC, p=0.340 ETH). On BTC
+its edge over the LSTM (p=0.018) and hybrid (p=0.049) is significant, and
+the hybrid significantly beats the plain LSTM there (p=0.026); on ETH none
+of the pairwise differences are significant at all. Full DM table in
+[`results/analysis.md`](results/analysis.md), reported plainly either way,
+per this project's rule against massaging results.
 
-Notice GARCH has the worst or near-worst MAPE despite the best QLIKE --
-that's not a contradiction, it's exactly what QLIKE is designed to reward
-that MAPE isn't: GARCH's errors evidently skew toward over-predicting risk,
-which QLIKE treats as a much smaller sin than under-predicting it. A model
-optimized for MAPE alone would not necessarily be the model you want for
-risk management.
+Notice GARCH's MAPE is high despite its best QLIKE -- worst of all models on
+ETH (69.2%) and mid-pack on BTC (52.9%, where the hybrid's 64.5% is actually
+worse). That's not a contradiction, it's exactly what QLIKE rewards that
+MAPE doesn't: GARCH's errors skew toward over-predicting risk, which QLIKE
+treats as a much smaller sin than under-predicting it. A model optimized for
+MAPE alone would not necessarily be the model you want for risk management.
 
-The result that matters most for a risk instrument: **GARCH degrades far
-less than the LSTM or hybrid on the top-decile most volatile days.** On BTC,
-GARCH's stress-day QLIKE (1.29) is well under half the LSTM's (3.05). The
-LSTM and hybrid looked reasonably competitive on calm-day averages but both
-broke down specifically on the days a risk model exists to get right --
-this gap did not close even after fixing the LSTM/hybrid refit cadence (see
-below), so it appears to be a structural difference between the models.
+The result that matters most for a risk instrument: **GARCH has the lowest
+absolute stress-day QLIKE of any model on both coins** (BTC 1.29, ETH 0.87).
+On BTC that's well under half the LSTM's (3.05). The LSTM and hybrid looked
+reasonably competitive on calm-day averages but both broke down specifically
+on the top-decile most volatile days -- the days a risk model exists to get
+right -- and this gap did not close even after fixing the LSTM/hybrid refit
+cadence (see below). (Note: GARCH is best on absolute stress-day *loss*, not
+on the calm-to-stress *degradation ratio* -- persistence has a smaller ratio
+only because it starts from a much worse calm-day baseline. See
+[`results/analysis.md`](results/analysis.md) for that distinction.)
 
 **Refit cadence was tested and fixed.** The LSTM and hybrid originally
 refit monthly against GARCH's weekly refit, as a CPU-budget tradeoff.
@@ -138,23 +146,33 @@ the same command shown in the video.)*
 
 ## Installation -- users
 
-Reproduces every number in this README from the committed data cache,
-offline, no API access required:
+Reproduces every reported number offline, no API access required:
 
 ```bash
 docker build -t crypto-vol-forecast .
 docker run crypto-vol-forecast
 ```
 
-This re-runs the full evaluation pipeline (`src/eval/run_final_report.py`)
-against the committed `data/cache/` parquet files and prints the same
-five-way table shown above.
+This runs `src/eval/run_final_report.py`, which re-scores every model's
+committed walk-forward forecast (the `results/*_forecast_*.csv` files) and
+recomputes the full five-way table, the Diebold-Mariano tests, and the
+calm/stress breakdown. It does **not** retrain the models from scratch --
+retraining the LSTM and hybrid takes many minutes on CPU. To regenerate the
+forecasts themselves from the cached price data, run the individual
+`src/eval/run_*.py` stages listed under the developer instructions below.
 
 To run the forecast CLI directly instead:
 
 ```bash
 docker run crypto-vol-forecast python -m src.cli forecast --pair BTC --horizon 24h
 ```
+
+The CLI is a convenience demo: it fits GARCH on the entire cached history
+(not the rolling 12-month walk-forward window the evaluation uses), so its
+single printed number is illustrative, not one of the evaluated QLIKE
+figures. It also forecasts the first day *after* the cached data ends, and
+prints that date explicitly -- the cache is a fixed snapshot, so "next day"
+is relative to the snapshot, not the calendar.
 
 ## Installation -- developers
 
@@ -206,19 +224,31 @@ python -m src.cli forecast --pair BTC --horizon 24h
   it's a structural difference between the models rather than purely a
   training-frequency artifact -- see `results/analysis.md`.
 - **~2 years of data is a small-data regime for a neural network.** The
-  LSTM and hybrid models learned real structure (both beat the naive
-  baselines) but did not have enough independent training signal to match a
-  well-specified 3-parameter GARCH model on this dataset size, even after
-  the refit-cadence fix above.
+  LSTM and hybrid models learned real structure (they beat plain persistence
+  on both coins, and the rolling mean on ETH -- though not on BTC, where the
+  rolling mean beats them) but did not have enough independent training
+  signal to match a well-specified 3-parameter GARCH model on this dataset
+  size, even after the refit-cadence fix above.
+- **The hybrid is scored on fewer days than the other models.** GARCH's
+  forecast feature only exists for the test period, so the hybrid gets 345
+  scored days (vs. 364-365) and its early training window is effectively
+  expanding rather than the fixed rolling 12-month window used elsewhere.
+  Re-scoring on the shared 345 days doesn't change the ranking, but the
+  hybrid's numbers aren't strictly apples-to-apples -- see `results/analysis.md`.
+- **GARCH's edge over a plain moving average is not statistically
+  significant.** By the Diebold-Mariano test, GARCH's lower QLIKE vs. a 7-day
+  rolling mean cannot be distinguished from noise on either coin (p=0.139
+  BTC, p=0.340 ETH). GARCH is the best model by point estimate, but this
+  sample doesn't prove it beats the trivial baseline.
 - **Data gaps**: the download pipeline detects and reports gaps explicitly
   (`results/integrity_report.json`) rather than silently interpolating over
   them; the committed cache for this run had zero gaps and zero duplicate
   timestamps on both symbols.
 - **Stress-period weakness is real and reported, not hidden**: every model
   in this repo, including GARCH, gets meaningfully worse on the most
-  volatile 10% of days. GARCH degrades the least, but "degrades the least"
-  is not the same as "handles stress days well in absolute terms" -- see
-  `results/analysis.md` for the actual numbers.
+  volatile 10% of days. GARCH has the lowest *absolute* stress-day loss on
+  both coins, but that's not the same as "handles stress days well in
+  absolute terms" -- see `results/analysis.md` for the actual numbers.
 - **Not investment advice.** This forecasts volatility, not price direction,
   and is built on public market data for a portfolio project, not a
   production risk system.
