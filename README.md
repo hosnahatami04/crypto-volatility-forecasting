@@ -11,6 +11,10 @@ any improvement over the classical baseline is statistically significant.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+## Demo
+
+[![Watch the demo](https://img.youtube.com/vi/9Z8xaR60GHg/maxresdefault.jpg)](https://youtu.be/9Z8xaR60GHg)
+
 ## Table of contents
 
 - [Why volatility, not price](#why-volatility-not-price)
