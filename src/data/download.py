@@ -1,6 +1,6 @@
 """Download hourly OHLCV klines and cache to parquet.
 
-Data source decision (Phase 1 connectivity probe, 2026-09-21): Binance's public
+Data source decision (connectivity probe): Binance's public
 REST API (api.binance.com) is reachable from the development network with no
 geo-blocking, returns ~0.7s latency, and serves full 2-year hourly history.
 CoinGecko's free tier only returns hourly granularity for the trailing ~90 days
